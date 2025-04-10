@@ -1,326 +1,143 @@
-package com.example.hydroponicapp
+package com.example.hydroponiccalculator
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.example.hydroponicapp.ui.theme.HydroponicAppTheme
-
-// ----------------------- DATA MODELS ----------------------------
-
-/**
- * Описание компонента удобрений:
- *  - [name]: название (NPK 10-5-5, Микроэлементы и т.д.)
- *  - [dosage]: дозировка (например, "10 мл/л")
- */
-data class FertilizerComponent(
-    val name: String,
-    val dosage: String
-)
-
-/**
- * Описание стадии развития растения:
- *  - [name]: название стадии (Вегетация, Цветение, Плодоношение и т.д.)
- *  - [components]: список необходимых удобрений и их дозировок
- */
-data class Stage(
-    val name: String,
-    val components: List<FertilizerComponent>
-)
-
-/**
- * Описание растения:
- *  - [id]: уникальный идентификатор
- *  - [name]: название растения (Перец, Арбуз, Клубника, и т.д.)
- *  - [stages]: список стадий, каждая со своими удобрениями
- */
-data class Plant(
-    val id: Int,
-    val name: String,
-    val stages: List<Stage>
-)
-
-// ------------------- SAMPLE DATA ---------------------
-
-/**
- * Список растений для примера.
- * В реальном приложении здесь может быть больше растений.
- */
-val samplePlants = listOf(
-    Plant(
-        id = 0,
-        name = "Перец",
-        stages = listOf(
-            Stage(
-                name = "Вегетация",
-                components = listOf(
-                    FertilizerComponent("NPK 10-5-5", "10 мл/л"),
-                    FertilizerComponent("Микроэлементы", "5 мл/л"),
-                    FertilizerComponent("Кальций", "3 мл/л")
-                )
-            ),
-            Stage(
-                name = "Цветение",
-                components = listOf(
-                    FertilizerComponent("NPK 5-10-5", "7 мл/л"),
-                    FertilizerComponent("Микроэлементы", "5 мл/л"),
-                    FertilizerComponent("Магний", "2 мл/л")
-                )
-            ),
-            Stage(
-                name = "Плодоношение",
-                components = listOf(
-                    FertilizerComponent("NPK 5-5-10", "8 мл/л"),
-                    FertilizerComponent("Микроэлементы", "4 мл/л"),
-                    FertilizerComponent("Кальций", "2 мл/л")
-                )
-            )
-        )
-    ),
-    Plant(
-        id = 1,
-        name = "Арбуз",
-        stages = listOf(
-            Stage(
-                name = "Вегетация",
-                components = listOf(
-                    FertilizerComponent("NPK 12-5-8", "12 мл/л"),
-                    FertilizerComponent("Железо", "3 мл/л")
-                )
-            ),
-            Stage(
-                name = "Цветение",
-                components = listOf(
-                    FertilizerComponent("NPK 7-9-5", "8 мл/л"),
-                    FertilizerComponent("Кальций", "2 мл/л"),
-                    FertilizerComponent("Сера", "2 мл/л")
-                )
-            ),
-            Stage(
-                name = "Плодоношение",
-                components = listOf(
-                    FertilizerComponent("NPK 5-5-10", "10 мл/л"),
-                    FertilizerComponent("Микроэлементы", "2 мл/л")
-                )
-            )
-        )
-    ),
-    Plant(
-        id = 2,
-        name = "Клубника",
-        stages = listOf(
-            Stage(
-                name = "Вегетация",
-                components = listOf(
-                    FertilizerComponent("NPK 10-3-7", "8 мл/л"),
-                    FertilizerComponent("Микроэлементы", "3 мл/л"),
-                )
-            ),
-            Stage(
-                name = "Цветение",
-                components = listOf(
-                    FertilizerComponent("NPK 5-8-7", "6 мл/л"),
-                    FertilizerComponent("Кальций", "3 мл/л"),
-                )
-            ),
-            Stage(
-                name = "Плодоношение",
-                components = listOf(
-                    FertilizerComponent("NPK 3-5-10", "9 мл/л"),
-                    FertilizerComponent("Железо", "2 мл/л")
-                )
-            )
-        )
-    ),
-    // Добавим остальное по тому же принципу
-)
-
-// ------------------ MAIN ACTIVITY (входная точка) -------------------
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            HydroponicAppTheme {
-                // Один Activity - несколько экранов: список и детальное описание
-                MyHydroponicApp()
-            }
+            HydroponicApp()
         }
     }
 }
 
-// ------------------ APP COMPOSABLE -------------------------------
-
+// Тема Material3 (по желанию можно вынести в отдельный файл)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MyHydroponicApp() {
-    var selectedPlant by remember { mutableStateOf<Plant?>(null) }
+fun HydroponicApp() {
+    // Набор растений и стадий
+    val plants = listOf("Базилик", "Листовой салат", "Петрушка")
+    val stages = listOf("Вегетация", "Цветение", "Плодоношение")
 
-    // Если растение ещё не выбрано - показываем список,
-    // иначе показываем экран с информацией о выбранном растении.
-    if (selectedPlant == null) {
-        PlantListScreen(
-            plants = samplePlants,
-            onPlantSelected = { plant ->
-                selectedPlant = plant
+    // Состояние выбора
+    var selectedPlant by remember { mutableStateOf(plants.first()) }
+    var selectedStage by remember { mutableStateOf(stages.first()) }
+    var volumeText by remember { mutableStateOf("1") }
+
+    // Итоговая строка результата
+    val resultText = remember(selectedPlant, selectedStage, volumeText) {
+        // Пример расчёта: (N, P, K)
+        val volume = volumeText.toDoubleOrNull() ?: 1.0
+        val (n, p, k) = when(selectedPlant) {
+            "Базилик" -> when(selectedStage) {
+                "Вегетация" -> Triple(2.0, 1.0, 2.0)
+                "Цветение" -> Triple(1.5, 1.2, 2.2)
+                "Плодоношение" -> Triple(1.0, 1.5, 2.5)
+                else -> Triple(1.0,1.0,1.0)
             }
-        )
-    } else {
-        PlantDetailScreen(
-            plant = selectedPlant!!,
-            onBack = {
-                // Возвращаемся к списку (сбрасываем выбранное растение)
-                selectedPlant = null
-            }
-        )
+            "Листовой салат" -> Triple(1.8, 0.8, 1.8)
+            "Петрушка" -> Triple(2.0, 0.8, 1.5)
+            else -> Triple(1.0, 1.0, 1.0)
+        }
+        val totalN = n * volume
+        val totalP = p * volume
+        val totalK = k * volume
+        "Азот: %.2f г\nФосфор: %.2f г\nКалий: %.2f г".format(totalN, totalP, totalK)
     }
-}
 
-// ------------------ SCREEN: LIST OF PLANTS -----------------------
-
-@Composable
-fun PlantListScreen(
-    plants: List<Plant>,
-    onPlantSelected: (Plant) -> Unit
-) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Выберите растение") }
-            )
+            TopAppBar(title = { Text("Гидропонный калькулятор") })
         }
-    ) { innerPadding ->
-        LazyColumn(
+    ) { paddingValues ->
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+                .padding(paddingValues)
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            items(plants) { plant ->
-                PlantListItem(
-                    plant = plant,
-                    onClick = { onPlantSelected(plant) }
+            // Выбор растения
+            Text("Растение:")
+            DropdownMenuBox(
+                items = plants,
+                selectedItem = selectedPlant,
+                onItemSelected = { selectedPlant = it }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Выбор стадии
+            Text("Стадия роста:")
+            DropdownMenuBox(
+                items = stages,
+                selectedItem = selectedStage,
+                onItemSelected = { selectedStage = it }
+            )
+
+            Spacer(Modifier.height(16.dp))
+
+            // Ввод объёма
+            Text("Объём раствора (л):")
+            TextField(
+                value = volumeText,
+                onValueChange = { volumeText = it },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true
+            )
+
+            Spacer(Modifier.height(24.dp))
+
+            // Результат
+            Text("Результат:")
+            Text(resultText)
+        }
+    }
+}
+
+// Простой DropdownMenu c Material3
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DropdownMenuBox(
+    items: List<String>,
+    selectedItem: String,
+    onItemSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = !expanded }
+    ) {
+        TextField(
+            value = selectedItem,
+            onValueChange = {},
+            readOnly = true,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded) },
+            colors = ExposedDropdownMenuDefaults.textFieldColors()
+        )
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            items.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item) },
+                    onClick = {
+                        onItemSelected(item)
+                        expanded = false
+                    }
                 )
             }
         }
-    }
-}
-
-@Composable
-fun PlantListItem(
-    plant: Plant,
-    onClick: () -> Unit
-) {
-    // Один элемент списка (карточка или просто строка)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clickable { onClick() },
-    ) {
-        Row(
-            modifier = Modifier
-                .padding(16.dp)
-                .fillMaxWidth()
-        ) {
-            Text(text = plant.name)
-        }
-    }
-}
-
-// ------------------ SCREEN: DETAIL (STAGES) ----------------------
-
-@Composable
-fun PlantDetailScreen(
-    plant: Plant,
-    onBack: () -> Unit
-) {
-    // Храним индекс выбранной стадии
-    var selectedStageIndex by remember { mutableStateOf(0) }
-
-    val currentStage = plant.stages[selectedStageIndex]
-
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(plant.name) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            // Material3 рекомендует Icons.Filled.ArrowBack (импортировать отдельно)
-                            imageVector = androidx.compose.material.icons.Icons.Default.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
-            )
-        }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-            // Блок переключения стадий (например, с помощью RadioButton)
-            Text(text = "Выберите стадию развития:", style = MaterialTheme.typography.titleMedium)
-            Spacer(modifier = Modifier.height(8.dp))
-            plant.stages.forEachIndexed { index, stage ->
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            selectedStageIndex = index
-                        }
-                        .padding(vertical = 4.dp)
-                ) {
-                    RadioButton(
-                        selected = (selectedStageIndex == index),
-                        onClick = { selectedStageIndex = index }
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = stage.name)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Показ списка удобрений для текущей стадии
-            Text(
-                text = "Необходимые удобрения (${currentStage.name}):",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            currentStage.components.forEach { fertilizer ->
-                Text(text = "• ${fertilizer.name}: ${fertilizer.dosage}")
-            }
-        }
-    }
-}
-
-// ------------------ PREVIEWS (для Android Studio) ----------------
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPlantListScreen() {
-    HydroponicAppTheme {
-        PlantListScreen(plants = samplePlants, onPlantSelected = {})
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewPlantDetailScreen() {
-    HydroponicAppTheme {
-        PlantDetailScreen(plant = samplePlants[0], onBack = {})
     }
 }
